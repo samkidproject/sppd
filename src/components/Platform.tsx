@@ -263,8 +263,20 @@ export default function Platform() {
         <div className="text-center">
           <h1 className="text-2xl font-black text-slate-800 uppercase tracking-tighter">Akses Dibatasi</h1>
           <p className="text-slate-400 font-bold text-sm max-w-xs mt-2">Akun Anda ({auth.currentUser?.email}) belum memiliki izin untuk mengakses sistem ini.</p>
+          <div className="mt-4 p-6 bg-slate-50 border border-slate-100 rounded-3xl text-center max-w-sm shadow-sm">
+            <p className="text-brand-primary font-black text-[10px] uppercase tracking-widest mb-2">Support Developer</p>
+            <p className="text-slate-500 text-xs font-bold leading-relaxed mb-4">Kalau cocok sama aplikasinya, boleh traktir dulu ya ☕ biar makin maksimal pakainya</p>
+            <a 
+              href="https://teer.id/samkid_project" 
+              target="_blank" 
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-brand-accent transition-all shadow-lg shadow-brand-primary/20 active:scale-95 group"
+            >
+              Traktir Samkid Project <ExternalLink size={12} className="ml-1" />
+            </a>
+          </div>
         </div>
-        <button onClick={() => signOut(auth)} className="px-8 py-3 bg-red-500 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg active:scale-95">Keluar</button>
+        <button onClick={() => signOut(auth)} className="px-8 py-3 bg-slate-200 text-slate-600 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-slate-300 transition-all active:scale-95">Keluar</button>
       </div>
     );
   }
