@@ -1,0 +1,84 @@
+{
+  "entities": {
+    "SPPD": {
+      "title": "Surat Perintah Perjalanan Dinas",
+      "description": "Data dokumen perjalanan dinas pegawai",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "nomorSppd": { "type": "string" },
+        "nama": { "type": "string" },
+        "nip": { "type": "string" },
+        "jabatan": { "type": "string" },
+        "pangkatGol": { "type": "string" },
+        "maksudPerjalanan": { "type": "string" },
+        "tujuan": { "type": "string" },
+        "tanggalBerangkat": { "type": "string", "format": "date" },
+        "tanggalKembali": { "type": "string", "format": "date" },
+        "lamaHari": { "type": "number" },
+        "transportasi": { "type": "string" },
+        "instansiTujuan": { "type": "string" },
+        "pejabatPenandatangan": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["nomorSppd", "nama", "nip", "jabatan", "tujuan", "tanggalBerangkat", "tanggalKembali"]
+    },
+    "Counter": {
+      "title": "Nomor Urut Counter",
+      "description": "Counter untuk auto-increment nomor SPPD",
+      "type": "object",
+      "properties": {
+        "currentValue": { "type": "number" }
+      },
+      "required": ["currentValue"]
+    },
+    "Settings": {
+      "title": "Pengaturan Instansi",
+      "description": "Konfigurasi detail instansi satuan kerja",
+      "type": "object",
+      "properties": {
+        "instansiPusat": { "type": "string" },
+        "satuanKerja": { "type": "string" },
+        "alamat": { "type": "string" },
+        "lokasiPenandatanganan": { "type": "string" },
+        "ppkNama": { "type": "string" },
+        "ppkNip": { "type": "string" },
+        "ppkJabatan": { "type": "string" },
+        "kepalaNama": { "type": "string" },
+        "kepalaNip": { "type": "string" },
+        "kepalaJabatan": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "AllowedUser": {
+      "title": "User Terdaftar",
+      "description": "User yang diizinkan mengakses aplikasi",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "addedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "sppd": {
+      "schema": "SPPD",
+      "description": "Koleksi data SPPD"
+    },
+    "counters": {
+      "schema": "Counter",
+      "description": "Koleksi counter nomor urut"
+    },
+    "settings": {
+      "schema": "Settings",
+      "description": "Koleksi pengaturan aplikasi"
+    },
+    "allowed_users": {
+      "schema": "AllowedUser",
+      "description": "Koleksi user yang diizinkan"
+    }
+  }
+}

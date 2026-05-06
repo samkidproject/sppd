@@ -1,0 +1,59 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMasterAdmin() {
+      return isSignedIn() && request.auth.token.email.lower() == 'samkidproject@gmail.com';
+    }
+
+    function isAllowed() {
+      return isMasterAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/allowed_users/$(request.auth.token.email.lower())));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-\\.]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidSPPD(data) {
+      // Simplified check to avoid errors while maintaining core constraints
+      return data.nomorSppd is string && data.nama is string && data.nip is string 
+        && data.createdBy == request.auth.uid
+        && data.createdAt == request.time;
+    }
+    
+    match /allowed_users/{email} {
+      allow read: if isSignedIn();
+      allow write: if isMasterAdmin();
+    }
+
+    match /sppd/{sppdId} {
+      allow create: if isAllowed() && isValidId(sppdId) && isValidSPPD(incoming());
+      allow get: if true;
+      allow list: if isAllowed() && (isMasterAdmin() || resource.data.createdBy == request.auth.uid);
+      allow delete, update: if isAllowed() && (isMasterAdmin() || resource.data.createdBy == request.auth.uid);
+    }
+
+    match /counters/{counterId} {
+      allow read, update: if isAllowed();
+      allow create: if isAllowed() && !exists(/databases/$(database)/documents/counters/$(counterId));
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAllowed();
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "projectId": "sppd-pegawai",
+  "appId": "1:924215311624:web:02c934964cefc2e8c2c0bd",
+  "apiKey": "AIzaSyDsY1YZDDC_6RakaTEcMMNY081n7_SDozY",
+  "authDomain": "sppd-pegawai.firebaseapp.com",
+  "databaseURL": "https://sppd-pegawai-default-rtdb.asia-southeast1.firebasedatabase.app",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "sppd-pegawai.firebasestorage.app",
+  "messagingSenderId": "924215311624",
+  "measurementId": "G-65LDGFZ76E"
+}
