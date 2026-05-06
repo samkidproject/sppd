@@ -1,6 +1,6 @@
 {
-  "name": "SPPD Generator Pro",
-  "description": "Aplikasi pembuatan Surat Perintah Perjalanan Dinas (SPPD) modern dengan integrasi Firebase (Firestore, Auth, Storage) dan PDF Generator otomatis dengan QR Code verifikasi.",
+  "name": "E-SPPD DIGITAL - Samkid Project",
+  "description": "Aplikasi pembuatan Surat Perjalanan Dinas (SPD) modern dan terintegrasi",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }
