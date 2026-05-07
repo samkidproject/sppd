@@ -63,8 +63,10 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 export const sppdService = {
   async getNextNomorSppd(): Promise<string> {
+    if (!auth.currentUser) return '';
     try {
-      const counterRef = doc(db, COUNTER_COLLECTION, COUNTER_DOC_ID);
+      // Use user-specific counter document
+      const counterRef = doc(db, COUNTER_COLLECTION, `counter_${auth.currentUser.uid}`);
       const nextValue = await runTransaction(db, async (transaction) => {
         const counterDoc = await transaction.get(counterRef);
         let newValue = 1;
