@@ -1,6 +1,6 @@
 {
-  "name": "E-SPPD DIGITAL - Samkid Project",
-  "description": "Aplikasi pembuatan Surat Perjalanan Dinas (SPD) modern dan terintegrasi",
+  "name": "SPD Instan",
+  "description": "Cepat, praktis, otomatis. Aplikasi pembuatan Surat Perintah Perjalanan Dinas (SPPD) modern dengan integrasi Firebase dan PDF Generator otomatis.",
   "requestFramePermissions": [],
   "majorCapabilities": []
 }

@@ -4,7 +4,7 @@ import { db } from '../lib/firebase';
 import { SPPDData } from '../types';
 import { ShieldCheck, FileText, User, Calendar, MapPin, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export default function Verify() {
   const [data, setData] = useState<SPPDData | null>(null);
@@ -137,14 +137,14 @@ export default function Verify() {
 
             <div className="pt-8 border-t border-brand-border">
               <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 italic text-xs text-slate-500 leading-relaxed">
-                "Dokumen ini diterbitkan secara elektronik melalui portal E-SPPD dan telah terverifikasi secara digital. Data di atas sesuai dengan arsip yang tersimpan dalam database pemerintahan."
+                "Dokumen ini diterbitkan secara elektronik melalui portal SPD Instan dan telah terverifikasi secara digital. Data di atas sesuai dengan arsip yang tersimpan dalam database pemerintahan."
               </div>
             </div>
           </div>
         </div>
 
         <p className="text-center mt-12 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">
-          © 2026 Smart Government Portal - Verification Engine
+          © 2026 SPD Instan - Cepat, praktis, otomatis
         </p>
       </motion.div>
     </div>

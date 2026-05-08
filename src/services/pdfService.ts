@@ -6,11 +6,17 @@ import { id as localeId } from 'date-fns/locale';
 
 export const pdfService = {
   async generateSPPD(data: Partial<SPPDData>, id: string, settings?: OrganizationSettings | null): Promise<Blob> {
+    console.log('Generating PDF for ID:', id, 'Data:', data);
     try {
-      const doc = new jsPDF();
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      
+      if (!data) throw new Error('Data SPPD tidak ditemukan.');
       
       const satker = (settings?.satuanKerja || 'PEMERINTAH KABUPATEN / KOTA').toUpperCase();
-      const pusat = (settings?.instansiPusat || '').toUpperCase();
       const alamat = settings?.alamat || 'Alamat Instansi Belum Diatur di Pengaturan';
       const lokasi = settings?.lokasiPenandatanganan || 'Bandar Lampung';
 
@@ -72,7 +78,7 @@ export const pdfService = {
           `${idx + 1}. ${p.nama}${p.nip ? '\n   NIP. ' + p.nip : ''}`, 
           `${p.tanggalLahir || '-'}          ${p.keterangan || '-'}`
         ])),
-        ['9.', 'Pembebanan Anggaran Instansi\nAkun', `a. ${safeData(data.pembebananAnggaran || settings?.satuanKerja)}\nb. `],
+        ['9.', 'Pembebanan Anggaran Instansi\nAkun', `a. ${safeData(data.pembebananAnggaran || settings?.satuanKerja)}\nb. ${safeData(data.akun)}`],
         ['10.', 'Keterangan lain-lain', '-'],
       ];
 
@@ -83,15 +89,15 @@ export const pdfService = {
         styles: { 
           cellPadding: 2, 
           fontSize: 9, 
-          lineColor: [0, 0, 0] as [number, number, number], 
+          lineColor: [0, 0, 0], 
           lineWidth: 0.1, 
-          textColor: [0, 0, 0] as [number, number, number] 
+          textColor: [0, 0, 0] 
         },
         columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 80 }, 2: { cellWidth: 80 } },
         margin: { left: 20, right: 20 }
       });
 
-      let lastY = (doc as any).lastAutoTable?.finalY + 5;
+      let lastY = ((doc as any).lastAutoTable?.finalY || 70) + 5;
       doc.setFontSize(8);
       doc.text('*Coret yang tidak perlu', 20, lastY);
 
@@ -102,6 +108,10 @@ export const pdfService = {
       doc.text('Tanggal          : ' + format(new Date(), 'dd MMMM yyyy', { locale: localeId }), rightX, lastY + 5);
       doc.setFont('helvetica', 'bold');
       doc.text('PEJABAT PEMBUAT KOMITMEN', rightX, lastY + 10);
+      
+      // Removed digital verification text as requested
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
       doc.text(settings?.ppkNama || '( ____________________ )', rightX, lastY + 40);
       doc.setFont('helvetica', 'normal');
       if (settings?.ppkNip) doc.text(`NIP. ${settings.ppkNip}`, rightX, lastY + 45);
@@ -140,8 +150,8 @@ export const pdfService = {
 
       // Visum Blocks (Iterative check-ins)
       const visumData = [
-        ['Tiba di             : ' + data.tujuan + '\n\nPada Tanggal    : \nKepala\n\n\n\n(.......................................................)\nNIP.', 
-         'Berangkat dari   : ' + data.tujuan + '\nKe                      : \nPada Tanggal      : \nKepala\n\n\n\n(.......................................................)\nNIP.'],
+        ['Tiba di             : ' + safeData(data.tujuan) + '\n\nPada Tanggal    : \nKepala\n\n\n\n(.......................................................)\nNIP.', 
+         'Berangkat dari   : ' + safeData(data.tujuan) + '\nKe                      : \nPada Tanggal      : \nKepala\n\n\n\n(.......................................................)\nNIP.'],
         ['Tiba di             : \n\nPada Tanggal    : \nKepala\n\n\n\n(.......................................................)\nNIP.', 
          'Berangkat dari   : \nKe                      : \nPada Tanggal      : \nKepala\n\n\n\n(.......................................................)\nNIP.'],
         ['Tiba di             : \n\nPada Tanggal    : \nKepala\n\n\n\n(.......................................................)\nNIP.', 
@@ -149,33 +159,32 @@ export const pdfService = {
       ];
 
       autoTable(doc, {
-        startY: (doc as any).lastAutoTable?.finalY,
+        startY: (doc as any).lastAutoTable?.finalY || 100,
         body: visumData,
         theme: 'grid',
-        styles: { ...tableVisumStyles, minCellHeight: 40 } as any,
+        styles: { ...tableVisumStyles },
         columnStyles: { 0: { cellWidth: 85 }, 1: { cellWidth: 85 } },
         margin: { left: 20, right: 20 }
       });
 
       // Final Check (Back at home)
-      const finalY = (doc as any).lastAutoTable?.finalY;
       autoTable(doc, {
-        startY: finalY,
+        startY: (doc as any).lastAutoTable?.finalY || 180,
         body: [
           [
-            `VI.   Tiba di             : ${settings?.satuanKerja}\n      (Tempat Kedudukan)\n      Pada Tanggal    : \n\n      Pejabat Pembuat Komitmen\n\n\n\n      ${settings?.ppkNama || '(.......................................................)'}\n      NIP. ${settings?.ppkNip || ''}`,
+            `VI.   Tiba di             : ${settings?.satuanKerja || '-'}\n      (Tempat Kedudukan)\n      Pada Tanggal    : \n\n      Pejabat Pembuat Komitmen\n\n\n\n      ${settings?.ppkNama || '(.......................................................)'}\n      NIP. ${settings?.ppkNip || ''}`,
             `      Telah diperiksa dengan keterangan bahwa perjalanan\n      tersebut atas perintahnya dan semata-mata untuk\n      kepentingan jabatan dalam waktu yang sesingkat-\n      singkatnya.\n      Pejabat Pembuat Komitmen\n\n\n\n      ${settings?.ppkNama || '(.......................................................)'}\n      NIP. ${settings?.ppkNip || ''}`
           ]
         ],
         theme: 'grid',
-        styles: { ...tableVisumStyles, minCellHeight: 60 } as any,
+        styles: { ...tableVisumStyles },
         columnStyles: { 0: { cellWidth: 85 }, 1: { cellWidth: 85 } },
         margin: { left: 20, right: 20 }
       });
 
       // Footer Catatan & Perhatian
       autoTable(doc, {
-        startY: (doc as any).lastAutoTable?.finalY,
+        startY: (doc as any).lastAutoTable?.finalY || 240,
         body: [
           ['VII.', 'Catatan Lain-Lain'],
           ['VIII.', 'PERHATIAN :\nPPK yang menerbitkan SPD, pegawai yang melakukan perjalanan dinas, para pejabat yang mengesahkan tanggal berangkat/tiba, serta bendahara pengeluaran bertanggung jawab berdasarkan peraturan-peraturan Keuangan Negara apabila menderita rugi akibat kesalahan, kelalaian, dan kealpaannya.']
@@ -189,7 +198,7 @@ export const pdfService = {
       return doc.output('blob');
     } catch (error) {
       console.error('PDF Generation Error:', error);
-      throw error;
+      throw new Error('Gagal merancang layout PDF: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }
 };

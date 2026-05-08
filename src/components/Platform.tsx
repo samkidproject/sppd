@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FilePlus, LayoutDashboard, Search, Download, Eye, Trash2, LogOut, Loader2, CheckCircle2, Settings, Save, Info, Phone, ExternalLink } from 'lucide-react';
 import { format, differenceInDays, parseISO } from 'date-fns';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../lib/utils';
-import { SPPDData, PANGKAT_GOL_OPTIONS, TRANSPORTASI_OPTIONS, OrganizationSettings, Pengikut, AllowedUser, MASTER_ADMIN } from '../types';
+import { SPPDData, PANGKAT_GOL_OPTIONS, TRANSPORTASI_OPTIONS, AKUN_OPTIONS, OrganizationSettings, Pengikut, AllowedUser, MASTER_ADMIN } from '../types';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 import { sppdService } from '../services/sppdService';
@@ -14,8 +14,8 @@ import { adminService } from '../services/adminService';
 const INITIAL_FORM_DATA: Partial<SPPDData> = {
   nama: '', nip: '', jabatan: '', pangkatGol: '', maksudPerjalanan: '', tujuan: '',
   tanggalBerangkat: format(new Date(), 'yyyy-MM-dd'), tanggalKembali: format(new Date(), 'yyyy-MM-dd'),
-  transportasi: TRANSPORTASI_OPTIONS[0], tempatBerangkat: 'Kantor Pusat', instansiTujuan: '', 
-  pejabatPenandatangan: '', pembebananAnggaran: '', pengikut: []
+  transportasi: TRANSPORTASI_OPTIONS[0], tempatBerangkat: '', instansiTujuan: '', 
+  pejabatPenandatangan: '', pembebananAnggaran: '', akun: '', pengikut: []
 };
 
 export default function Platform() {
@@ -149,11 +149,30 @@ export default function Platform() {
     } return 0;
   };
   const validate = () => {
+    console.log('Validating form data:', formData);
     const e: Record<string, string> = {};
-    if (!formData.nama) e.nama = 'X'; if (!formData.nip?.match(/^\d+$/)) e.nip = 'NIP harus angka';
-    if (!formData.jabatan) e.jabatan = 'X'; if (!formData.maksudPerjalanan) e.maksudPerjalanan = 'X';
-    if (!formData.tujuan) e.tujuan = 'X'; if (calcDays() <= 0) e.tanggalKembali = 'Invalid';
-    setErrors(e); return Object.keys(e).length === 0;
+    
+    const nama = formData.nama?.trim();
+    if (!nama) e.nama = 'Nama wajib diisi'; 
+    
+    // NIP can be empty for some users, but if provided should be basic check
+    const nip = formData.nip?.trim();
+    if (!nip) e.nip = 'NIP wajib diisi';
+    
+    if (!formData.jabatan?.trim()) e.jabatan = 'Jabatan wajib diisi'; 
+    if (!formData.maksudPerjalanan?.trim()) e.maksudPerjalanan = 'Maksud perjalanan wajib diisi';
+    if (!formData.tujuan?.trim()) e.tujuan = 'Kota tujuan wajib diisi'; 
+    
+    const days = calcDays();
+    if (days <= 0) e.tanggalKembali = 'Tanggal kembali tidak valid (minimal 1 hari)';
+    
+    setErrors(e); 
+    const isValid = Object.keys(e).length === 0;
+    if (!isValid) {
+      console.warn('Validation failed fields:', Object.keys(e));
+      alert('Mohon lengkapi: ' + Object.values(e).join(', '));
+    }
+    return isValid;
   };
 
   const saveConfig = async (e: React.FormEvent) => {
@@ -182,6 +201,7 @@ export default function Platform() {
       instansiTujuan: item.instansiTujuan,
       pejabatPenandatangan: item.pejabatPenandatangan,
       pembebananAnggaran: item.pembebananAnggaran,
+      akun: item.akun || '',
       pengikut: item.pengikut || [],
     });
     setEditingId(item.id);
@@ -192,7 +212,7 @@ export default function Platform() {
     e.preventDefault(); if (!validate()) return;
     setIsSubmitting(true);
     try {
-      const docId = editingId || crypto.randomUUID();
+      const docId = editingId || (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Math.random().toString(36).substring(2) + Date.now().toString(36));
       
       let currentNomor = '';
       if (editingId) {
@@ -200,11 +220,16 @@ export default function Platform() {
         currentNomor = existing?.nomorSppd || '';
       } else {
         currentNomor = await sppdService.getNextNomorSppd();
+        if (!currentNomor) {
+          throw new Error('Gagal mendapatkan nomor SPPD otomatis. Silakan coba lagi.');
+        }
       }
       
       const fullData = { ...formData, nomorSppd: currentNomor, lamaHari: calcDays() };
+      console.log('Generating PDF for:', currentNomor);
       const b = await pdfService.generateSPPD(fullData, docId, orgSettings);
       
+      console.log('Saving SPPD to Firestore...');
       await sppdService.saveSPPD(fullData as Partial<SPPDData>, b, docId, currentNomor);
       
       await load(); 
@@ -290,7 +315,7 @@ export default function Platform() {
       <aside className="w-64 bg-brand-sidebar flex flex-col h-full shadow-2xl z-40">
         <div className="px-8 py-10 flex items-center gap-3">
           <div className="w-10 h-10 bg-brand-accent rounded-xl flex items-center justify-center text-white font-black">SP</div>
-          <div className="flex flex-col"><span className="text-white font-black text-xl">E-SPPD</span><span className="text-[8px] text-slate-400 font-bold tracking-widest uppercase">Cloud Database</span></div>
+          <div className="flex flex-col"><span className="text-white font-black text-xl">SPD Instan</span><span className="text-[8px] text-slate-400 font-bold tracking-widest uppercase tracking-widest">Cepat, praktis, otomatis</span></div>
         </div>
         <nav className="flex-1 px-4 space-y-1">
           <button onClick={() => setView('dashboard')} className={cn("flex w-full items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all", view === 'dashboard' ? "bg-brand-accent text-white shadow-lg" : "text-slate-400 hover:text-white hover:bg-slate-800")}><LayoutDashboard size={18}/> Dashboard</button>
@@ -312,7 +337,7 @@ export default function Platform() {
       </aside>
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-20 bg-white border-b border-brand-border flex items-center justify-between px-10">
-          <div><h2 className="font-black text-xl text-brand-text-main tracking-tight uppercase">{view === 'dashboard' ? 'Dashboard' : view === 'form' ? 'Buat Baru' : view === 'settings' ? 'Pengaturan' : view === 'about' ? 'Tentang Aplikasi' : 'Admin Control Panel'}</h2><p className="text-[10px] text-brand-text-muted font-bold tracking-widest">SISTEM GENERATOR SPPD DIGITAL</p></div>
+          <div><h2 className="font-black text-xl text-brand-text-main tracking-tight uppercase">{view === 'dashboard' ? 'Dashboard' : view === 'form' ? 'Buat Baru' : view === 'settings' ? 'Pengaturan' : view === 'about' ? 'Tentang Aplikasi' : 'Admin Control Panel'}</h2><p className="text-[10px] text-brand-text-muted font-bold tracking-widest">SPD INSTAN - CEPAT, PRAKTIS, OTOMATIS</p></div>
           <div className="flex items-center gap-4 text-right">
             <div><p className="text-sm font-black leading-tight">{auth.currentUser?.displayName}</p><p className="text-[9px] text-brand-text-muted font-bold tracking-widest uppercase">{auth.currentUser?.email === MASTER_ADMIN ? 'Super Admin' : 'Administrator'}</p></div>
             <img referrerPolicy="no-referrer" src={auth.currentUser?.photoURL || ''} className="w-12 h-12 rounded-2xl border-2 border-brand-border" alt="Profile" />
@@ -408,6 +433,26 @@ export default function Platform() {
                       <div className="space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase ml-2">Instansi Tujuan</label><input value={formData.instansiTujuan || ''} onChange={e => setFormData({...formData, instansiTujuan: e.target.value})} className="w-full bg-brand-bg rounded-xl py-3 px-4 text-sm font-bold outline-none ring-1 ring-brand-border"/></div>
                       
                       <div className="col-span-2 space-y-1"><label className="text-[9px] font-black text-slate-400 uppercase ml-2">Pembebanan Anggaran</label><input placeholder="Contoh: APBD Dinas Pendidikan 2024" value={formData.pembebananAnggaran || ''} onChange={e => setFormData({...formData, pembebananAnggaran: e.target.value})} className="w-full bg-brand-bg rounded-xl py-3 px-4 text-sm font-bold outline-none ring-1 ring-brand-border"/></div>
+                      <div className="col-span-2 space-y-1">
+                        <label className="text-[9px] font-black text-slate-400 uppercase ml-2">Mata Anggaran / Akun</label>
+                        <select 
+                          value={formData.akun || ''} 
+                          onChange={e => setFormData({...formData, akun: e.target.value})} 
+                          className="w-full bg-brand-bg rounded-xl py-3 px-4 text-sm font-bold outline-none ring-1 ring-brand-border appearance-none cursor-pointer"
+                        >
+                          {AKUN_OPTIONS.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                        {formData.akun && (
+                          <div className="flex items-center gap-2 mt-1 ml-2">
+                            <Info size={10} className="text-brand-primary" />
+                            <p className="text-[10px] font-bold text-slate-500 italic">
+                              {AKUN_OPTIONS.find(opt => opt.value === formData.akun)?.description}
+                            </p>
+                          </div>
+                        )}
+                      </div>
 
                     </div>
 
@@ -543,8 +588,8 @@ export default function Platform() {
                         <div className="w-24 h-24 bg-white/10 backdrop-blur-xl rounded-4xl flex items-center justify-center mx-auto mb-6 border border-white/20 shadow-2xl">
                           <span className="text-white font-black text-4xl tracking-tighter">SP</span>
                         </div>
-                        <h2 className="text-white text-3xl font-black tracking-tight uppercase">E-SPPD DIGITAL</h2>
-                        <p className="text-blue-200/60 font-bold text-[10px] uppercase tracking-[0.4em] mt-2">Professional Document Solution</p>
+                        <h2 className="text-white text-3xl font-black tracking-tight uppercase">SPD INSTAN</h2>
+                        <p className="text-blue-200/60 font-bold text-[10px] uppercase tracking-[0.4em] mt-2">Cepat, praktis, otomatis</p>
                       </div>
                     </div>
                     

@@ -1,15 +1,23 @@
 import { signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { LogIn, ShieldCheck } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 
 export default function Login() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
+    } catch (error: any) {
+      // Ignore common errors that happen when user closes search or cancels
+      if (
+        error.code === 'auth/popup-closed-by-user' || 
+        error.code === 'auth/cancelled-popup-request'
+      ) {
+        return;
+      }
       console.error('Login failed', error);
+      alert('Gagal masuk: ' + (error.message || 'Terjadi kesalahan internal'));
     }
   };
 
@@ -27,8 +35,8 @@ export default function Login() {
           <div className="w-20 h-20 bg-brand-accent rounded-2xl mx-auto flex items-center justify-center shadow-xl shadow-blue-500/20 mb-6 border-4 border-white/10">
             <span className="text-3xl font-black">SP</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tight mb-2">E-SPPD</h1>
-          <p className="text-slate-400 text-sm font-medium uppercase tracking-[0.2em]">Smart Government Portal</p>
+          <h1 className="text-3xl font-black tracking-tight mb-2">SPD Instan</h1>
+          <p className="text-slate-400 text-sm font-medium uppercase tracking-[0.2em]">Cepat, praktis, otomatis</p>
         </div>
 
         <div className="p-10 text-center">

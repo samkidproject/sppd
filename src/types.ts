@@ -22,6 +22,7 @@ export interface SPPDData {
   tempatBerangkat: string;
   instansiTujuan: string;
   pembebananAnggaran: string;
+  akun: string;
   pejabatPenandatangan: string;
   pengikut: Pengikut[];
   pdfUrl?: string;
@@ -79,4 +80,12 @@ export const TRANSPORTASI_OPTIONS = [
   'Kereta Api',
   'Kapal Laut',
   'Kendaraan Umum',
+];
+
+export const AKUN_OPTIONS = [
+  { value: '', label: '- Pilih Akun / Mata Anggaran -', description: '' },
+  { value: '524111', label: '524111', description: 'Belanja Perjalanan Dinas Biasa' },
+  { value: '524113', label: '524113', description: 'Belanja Perjalanan Dinas Dalam Kota' },
+  { value: '524114', label: '524114', description: 'Belanja Perjalanan Dinas Paket Meeting' },
+  { value: '524119', label: '524119', description: 'Belanja Perjalanan Dinas Lainnya' },
 ];

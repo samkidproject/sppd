@@ -91,29 +91,55 @@ export const sppdService = {
 
   async saveSPPD(data: Partial<SPPDData>, pdfBlob: Blob, providedId: string, nomorSppd: string): Promise<string> {
     if (!auth.currentUser) throw new Error('User not authenticated');
+    console.log('--- START SAVING SPPD ---');
+    console.log('ID:', providedId);
+    console.log('Nomor:', nomorSppd);
+    console.log('Blob Size:', (pdfBlob.size / 1024).toFixed(2), 'KB');
 
     try {
-      // 1. Convert Blob to Base64 (Data URL) - Stores inside Firestore to avoid Storage CORS
+      // 1. Convert Blob to Base64 (Data URL)
+      console.log('Converting blob to base64...');
       const reader = new FileReader();
       const pdfBase64 = await new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
+        reader.onloadend = () => {
+          console.log('FileReader finished loading.');
+          resolve(reader.result as string);
+        };
+        reader.onerror = (e) => {
+          console.error('FileReader error:', e);
+          reject(new Error('Gagal membaca blob PDF.'));
+        };
         reader.readAsDataURL(pdfBlob);
       });
+      
+      if (!pdfBase64) throw new Error('Teks base64 PDF kosong.');
+      console.log('Base64 length:', pdfBase64.length);
 
       // 2. Save to Firestore
+      console.log('Accessing Firestore...');
       const sppdRef = doc(db, SPPD_COLLECTION, providedId);
       
-      // Sanitize data to remove undefined values which Firestore doesn't support
-      const sanitizedData = { ...data };
-      Object.keys(sanitizedData).forEach(key => {
-        if (sanitizedData[key as keyof typeof sanitizedData] === undefined) {
-          (sanitizedData as any)[key] = '';
-        }
-      });
+      // Deep sanitize data to remove undefined values which Firestore doesn't support
+      const deepSanitize = (obj: any): any => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) return obj.map(deepSanitize);
+        
+        const newObj: any = {};
+        Object.keys(obj).forEach(key => {
+          const val = obj[key];
+          if (val === undefined) {
+            newObj[key] = '';
+          } else if (val !== null && typeof val === 'object') {
+            newObj[key] = deepSanitize(val);
+          } else {
+            newObj[key] = val;
+          }
+        });
+        return newObj;
+      };
 
       const sppdData = {
-        ...sanitizedData,
+        ...deepSanitize(data),
         id: providedId,
         nomorSppd,
         pdfUrl: pdfBase64,
